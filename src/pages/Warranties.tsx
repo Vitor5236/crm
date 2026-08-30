@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { Plus, Search, CreditCard as Edit2, Trash2, Shield, AlertTriangle, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Modal from '../components/Modal';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { warrantyState } from '../lib/warranty';
 import type { Warranty, Client, Service } from '../types/database';
 
 export default function Warranties() {
@@ -112,13 +113,17 @@ export default function Warranties() {
   };
 
   const getWarrantyStatus = (warranty: Warranty) => {
-    if (warranty.status === 'claimed') return { label: 'Acionada', color: 'bg-amber-100 text-amber-700', icon: AlertTriangle };
-    if (warranty.status === 'expired') return { label: 'Expirada', color: 'bg-red-100 text-red-700', icon: AlertTriangle };
-
-    const daysRemaining = differenceInDays(new Date(warranty.end_date), new Date());
-    if (daysRemaining < 0) return { label: 'Expirada', color: 'bg-red-100 text-red-700', icon: AlertTriangle };
-    if (daysRemaining <= 30) return { label: `${daysRemaining} dias restantes`, color: 'bg-amber-100 text-amber-700', icon: AlertTriangle };
-    return { label: 'Ativa', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle };
+    const { state, daysRemaining } = warrantyState(warranty.status, warranty.end_date);
+    switch (state) {
+      case 'claimed':
+        return { label: 'Acionada', color: 'bg-amber-100 text-amber-700', icon: AlertTriangle };
+      case 'expired':
+        return { label: 'Expirada', color: 'bg-red-100 text-red-700', icon: AlertTriangle };
+      case 'expiring':
+        return { label: `${daysRemaining} dias restantes`, color: 'bg-amber-100 text-amber-700', icon: AlertTriangle };
+      default:
+        return { label: 'Ativa', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle };
+    }
   };
 
   const filteredWarranties = warranties.filter((warranty) => {
@@ -129,8 +134,13 @@ export default function Warranties() {
     return matchesSearch && matchesStatus;
   });
 
-  const activeCount = warranties.filter((w) => w.status === 'active' && differenceInDays(new Date(w.end_date), new Date()) >= 0).length;
-  const expiringCount = warranties.filter((w) => w.status === 'active' && differenceInDays(new Date(w.end_date), new Date()) < 30 && differenceInDays(new Date(w.end_date), new Date()) >= 0).length;
+  const activeCount = warranties.filter((w) => {
+    const s = warrantyState(w.status, w.end_date).state;
+    return s === 'active' || s === 'expiring';
+  }).length;
+  const expiringCount = warranties.filter(
+    (w) => warrantyState(w.status, w.end_date).state === 'expiring',
+  ).length;
 
   if (loading) {
     return (

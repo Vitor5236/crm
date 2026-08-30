@@ -43,7 +43,9 @@ export default function Logs() {
   });
 
   const actions = [...new Set(logs.map((l) => l.action))];
-  const entities = [...new Set(logs.map((l) => l.entity_type).filter(Boolean))];
+  const entities = [
+    ...new Set(logs.map((l) => l.entity_type).filter((e): e is string => Boolean(e))),
+  ];
 
   const getActionColor = (action: string) => {
     if (action.includes('create') || action.includes('insert')) return 'bg-emerald-100 text-emerald-700';

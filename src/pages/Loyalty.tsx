@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, CreditCard as Edit2, Gift, Award, TrendingUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { tierForPoints } from '../lib/loyalty';
 import Modal from '../components/Modal';
 import type { LoyaltyProgram, Client } from '../types/database';
 
@@ -74,12 +75,7 @@ export default function Loyalty() {
 
   const handleAddPoints = async (program: LoyaltyProgram, amount: number) => {
     const newPoints = program.points + amount;
-    let newTier = program.tier;
-
-    if (newPoints >= 1000) newTier = 'platinum';
-    else if (newPoints >= 500) newTier = 'gold';
-    else if (newPoints >= 200) newTier = 'silver';
-    else newTier = 'bronze';
+    const newTier = tierForPoints(newPoints);
 
     try {
       const { error } = await supabase

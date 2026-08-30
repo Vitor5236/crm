@@ -97,7 +97,9 @@ export default function Services() {
     });
   };
 
-  const categories = [...new Set(services.map((s) => s.category).filter(Boolean))];
+  const categories = [
+    ...new Set(services.map((s) => s.category).filter((c): c is string => Boolean(c))),
+  ];
 
   const filteredServices = services.filter((service) => {
     const matchesSearch =

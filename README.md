@@ -116,9 +116,26 @@ No secrets are committed; configure them via `.env` (git-ignored).
 - **Row-Level Security** enabled on all tables, with policies for authenticated access.
 - Only the Supabase **anon key** is used client-side (never the service-role key).
 
+## Testing & CI
+
+Business rules are extracted into pure, unit-tested modules under `src/lib`
+(e.g. loyalty-tier thresholds in `loyalty.ts`, warranty-status derivation in
+`warranty.ts`), decoupled from Supabase and the UI. Tested with **Vitest** +
+**React Testing Library** (including a `Modal` component test).
+
+```bash
+npm run lint        # ESLint
+npm run typecheck   # tsc --noEmit
+npm test            # Vitest
+npm run build       # production build
+```
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs lint →
+type-check → tests → build → secret scan (gitleaks) on every PR.
+
 ## Future Improvements
 
-- Automated tests (component + e2e) and a CI pipeline.
+- End-to-end tests (Playwright) over the main CRM flows.
 - Role-based access (technician vs. manager) on top of RLS.
 - Dashboards for visit throughput, warranty expirations and maintenance due.
 - CSV/PDF export and WhatsApp/e-mail sending from the message templates.
